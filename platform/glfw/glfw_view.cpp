@@ -14,6 +14,7 @@
 #include <mbgl/style/layers/fill_extrusion_layer.hpp>
 #include <mbgl/style/layers/fill_layer.hpp>
 #include <mbgl/style/layers/line_layer.hpp>
+#include <mbgl/style/layers/symbol_layer.hpp>
 #include <mbgl/style/sources/custom_geometry_source.hpp>
 #include <mbgl/style/sources/geojson_source.hpp>
 #include <mbgl/style/style.hpp>
@@ -27,6 +28,8 @@
 #include <mapbox/cheap_ruler.hpp>
 #include <mapbox/geometry.hpp>
 #include <mapbox/geojson.hpp>
+
+#include <sstream>
 
 #if MBGL_USE_GLES2
 #define GLFW_INCLUDE_ES2
@@ -457,6 +460,67 @@ void GLFWView::onKey(GLFWwindow *window, int key, int /*scancode*/, int action, 
         case GLFW_KEY_J: {
             // Snapshot with overlay
             view->makeSnapshot(true);
+        } break;
+        case GLFW_KEY_G: {
+            using namespace mbgl::style;
+            using namespace mbgl::style::conversion;
+            using namespace mbgl::style::expression::dsl;
+
+            static const std::string points = R"({
+            "type": "MultiPoint",
+            "coordinates": [
+            [
+                 24.919674396514893,
+                 60.16455037398201
+               ],
+               [
+                 24.921332001686096,
+                 60.16460108220136
+               ],
+               [
+                 24.924674034118652,
+                 60.16487063510643
+               ],
+               [
+                 24.931159615516663,
+                 60.16733387258923
+               ]
+            ]
+            })";
+
+            static mapbox::geojson::geojson route{mapbox::geojson::parse(mbgl::platform::glfw::route)};
+
+            auto s2 = std::make_unique<GeoJSONSource>("line");
+            s2->setGeoJSON(route);
+            view->map->getStyle().addSource(std::move(s2));
+
+//            auto fillLayer = std::make_unique<mbgl::style::FillLayer>("fill", "polygon");
+//            fillLayer->setFillColor(mbgl::Color::black());
+//            fillLayer->setFillOpacity(0.1);
+//            view->map->getStyle().addLayer(std::move(fillLayer));
+
+            auto lineLayer = std::make_unique<mbgl::style::LineLayer>("line", "line");
+            lineLayer->setLineColor(mbgl::Color::red());
+            view->map->getStyle().addLayer(std::move(lineLayer));
+  
+            auto &style = view->map->getStyle();
+            auto labelLayer = style.getLayer("poi-label");
+            if (labelLayer) {
+                auto symbolLayer = static_cast<mbgl::style::SymbolLayer *>(labelLayer);
+//                    std::stringstream ss;
+//                    ss << std::string(R"(["case", ["<", ["distance", )") << mbgl::platform::glfw::route << std::string(R"( ], 100.0], 1, 0.2] )");
+//                    auto expr = createExpression(ss.str().c_str());
+//                    if (expr) {
+////                        symbolLayer->setIconOpacity(PropertyExpression<float>(std::move(expr)));
+//                        symbolLayer->setTextOpacity(PropertyExpression<float>(std::move(expr)));
+//                    }
+                std::stringstream ss;
+                ss << std::string(R"([ "<" , ["distance", )") << mbgl::platform::glfw::route << std::string(R"( ], 100])");
+                auto expr = createExpression(ss.str().c_str());
+                if (expr) {
+                    symbolLayer->setFilter(Filter(std::move(expr)));
+                }
+            }
         } break;
         }
     }

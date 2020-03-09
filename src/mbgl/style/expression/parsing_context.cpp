@@ -24,6 +24,7 @@
 #include <mbgl/style/expression/number_format.hpp>
 #include <mbgl/style/expression/step.hpp>
 #include <mbgl/style/expression/within.hpp>
+#include <mbgl/style/expression/distance.hpp>
 
 #include <mbgl/style/expression/find_zoom_curve.hpp>
 #include <mbgl/style/expression/dsl.hpp>
@@ -120,6 +121,7 @@ MAPBOX_ETERNAL_CONSTEXPR const auto expressionRegistry =
         {"case", Case::parse},
         {"coalesce", Coalesce::parse},
         {"collator", CollatorExpression::parse},
+        {"distance", Distance::parse},
         {"format", FormatExpression::parse},
         {"image", ImageExpression::parse},
         {"interpolate", parseInterpolate},

@@ -166,6 +166,7 @@ add_library(
     ${PROJECT_SOURCE_DIR}/include/mbgl/style/expression/comparison.hpp
     ${PROJECT_SOURCE_DIR}/include/mbgl/style/expression/compound_expression.hpp
     ${PROJECT_SOURCE_DIR}/include/mbgl/style/expression/dsl.hpp
+    ${PROJECT_SOURCE_DIR}/include/mbgl/style/expression/distance.hpp
     ${PROJECT_SOURCE_DIR}/include/mbgl/style/expression/error.hpp
     ${PROJECT_SOURCE_DIR}/include/mbgl/style/expression/expression.hpp
     ${PROJECT_SOURCE_DIR}/include/mbgl/style/expression/find_zoom_curve.hpp
@@ -555,6 +556,7 @@ add_library(
     ${PROJECT_SOURCE_DIR}/src/mbgl/style/expression/collator_expression.cpp
     ${PROJECT_SOURCE_DIR}/src/mbgl/style/expression/comparison.cpp
     ${PROJECT_SOURCE_DIR}/src/mbgl/style/expression/compound_expression.cpp
+    ${PROJECT_SOURCE_DIR}/src/mbgl/style/expression/distance.cpp
     ${PROJECT_SOURCE_DIR}/src/mbgl/style/expression/dsl.cpp
     ${PROJECT_SOURCE_DIR}/src/mbgl/style/expression/dsl_impl.hpp
     ${PROJECT_SOURCE_DIR}/src/mbgl/style/expression/expression.cpp
@@ -940,6 +942,7 @@ include(${PROJECT_SOURCE_DIR}/vendor/protozero.cmake)
 include(${PROJECT_SOURCE_DIR}/vendor/unique_resource.cmake)
 include(${PROJECT_SOURCE_DIR}/vendor/vector-tile.cmake)
 include(${PROJECT_SOURCE_DIR}/vendor/wagyu.cmake)
+include(${PROJECT_SOURCE_DIR}/vendor/cheap-ruler-cpp.cmake)
 
 target_link_libraries(
     mbgl-core
@@ -959,6 +962,7 @@ target_link_libraries(
         mbgl-vendor-unique_resource
         mbgl-vendor-vector-tile
         mbgl-vendor-wagyu
+        mbgl-vendor-cheap-ruler-cpp
     PUBLIC
         Mapbox::Base::Extras::expected-lite
         Mapbox::Base::Extras::rapidjson
@@ -994,7 +998,7 @@ if(MBGL_WITH_CORE_ONLY)
     return()
 endif()
 
-include(${PROJECT_SOURCE_DIR}/scripts/license.cmake)
+#include(${PROJECT_SOURCE_DIR}/scripts/license.cmake)
 
 if(MBGL_WITH_QT)
     include(${PROJECT_SOURCE_DIR}/platform/qt/qt.cmake)
