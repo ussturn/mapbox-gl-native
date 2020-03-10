@@ -9,7 +9,6 @@
 
 #include <mbgl/util/logging.hpp>
 #include <mbgl/util/string.hpp>
-#include <mbgl/util/geometry_distance.hpp>
 
 #include <rapidjson/document.h>
 
