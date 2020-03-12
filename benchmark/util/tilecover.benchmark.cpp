@@ -67,14 +67,14 @@ static const auto geomPolygon = Polygon<double>{
     }
 };
 
-static void TileCoverPolygon(benchmark::State& state) {
-    std::size_t length = 0;
+// static void TileCoverPolygon(benchmark::State& state) {
+//     std::size_t length = 0;
 
-    while (state.KeepRunning()) {
-        auto tiles = util::tileCover(geomPolygon, 8);
-        length += tiles.size();
-    }
-}
+//     while (state.KeepRunning()) {
+//         auto tiles = util::tileCover(geomPolygon, 8);
+//         length += tiles.size();
+//     }
+// }
 
 static void TileCountPolygon(benchmark::State& state) {
     std::size_t length = 0;
@@ -89,5 +89,5 @@ BENCHMARK(TileCountBounds);
 BENCHMARK(TileCountPolygon);
 BENCHMARK(TileCoverPitchedViewport);
 BENCHMARK(TileCoverBounds);
-BENCHMARK(TileCoverPolygon);
+//BENCHMARK(TileCoverPolygon);
 

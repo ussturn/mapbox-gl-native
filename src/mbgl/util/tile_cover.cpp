@@ -173,15 +173,15 @@ std::vector<UnwrappedTileID> tileCover(const TransformState& state, uint8_t z) {
         z);
 }
 
-std::vector<UnwrappedTileID> tileCover(const Geometry<double>& geometry, uint8_t z) {
-    std::vector<UnwrappedTileID> result;
-    TileCover tc(geometry, z, true);
-    while (tc.hasNext()) {
-        result.push_back(*tc.next());
-    };
+// std::vector<UnwrappedTileID> tileCover(const Geometry<double>& geometry, uint8_t z) {
+//     std::vector<UnwrappedTileID> result;
+//     TileCover tc(geometry, z, true);
+//     while (tc.hasNext()) {
+//         result.push_back(*tc.next());
+//     };
 
-    return result;
-}
+//     return result;
+// }
 
 // Taken from https://github.com/mapbox/sphericalmercator#xyzbbox-zoom-tms_style-srs
 // Computes the projected tiles for the lower left and upper right points of the bounds
