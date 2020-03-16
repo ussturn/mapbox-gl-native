@@ -767,7 +767,7 @@ void TestRunner::run(TestMetadata& metadata) {
         for (const auto& tileId : tileIds) {
             resetContext(metadata, ctx);
             auto cameraForTile{camera};
-            cameraForTile.withCenter(getTileCenterCoordinates(tileId));
+            cameraForTile.withCenter(getTileCenterCoordinates(tileId.toUnwrapped()));
             map.jumpTo(cameraForTile);
 
             auto resultForTile = runTest(metadata, ctx);

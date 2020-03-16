@@ -10,21 +10,21 @@
 using namespace mbgl;
 
 TEST(TileCover, Empty) {
-    EXPECT_EQ((std::vector<UnwrappedTileID>{}), util::tileCover(LatLngBounds::empty(), 0));
+    EXPECT_EQ((std::vector<OverscaledTileID>{}), util::tileCover(LatLngBounds::empty(), 0));
 }
 
 TEST(TileCover, Arctic) {
-    EXPECT_EQ((std::vector<UnwrappedTileID>{}),
+    EXPECT_EQ((std::vector<OverscaledTileID>{}),
               util::tileCover(LatLngBounds::hull({ 86, -180 }, { 90, 180 }), 0));
 }
 
 TEST(TileCover, Antarctic) {
-    EXPECT_EQ((std::vector<UnwrappedTileID>{}),
+    EXPECT_EQ((std::vector<OverscaledTileID>{}),
               util::tileCover(LatLngBounds::hull({ -86, -180 }, { -90, 180 }), 0));
 }
 
 TEST(TileCover, WorldZ0) {
-    EXPECT_EQ((std::vector<UnwrappedTileID>{
+    EXPECT_EQ((std::vector<OverscaledTileID>{
         { 0, 0, 0 },
     }),
               util::tileCover(LatLngBounds::world(), 0));
@@ -37,7 +37,7 @@ TEST(TileCover, Pitch) {
 
     transform.jumpTo(CameraOptions().withCenter(LatLng { 0.1, -0.1, }).withZoom(2.0).withBearing(5.0).withPitch(40.0));
 
-    EXPECT_EQ((std::vector<UnwrappedTileID>{
+    EXPECT_EQ((std::vector<OverscaledTileID>{
         { 2, 1, 1 }, { 2, 2, 1 }, { 2, 1, 2 }, { 2, 2, 2 }
     }),
               util::tileCover(transform.getState(), 2));
@@ -51,10 +51,10 @@ TEST(TileCover, PitchIssue15442) {
         .withZoom(2.0551126748417214).withBearing(0.74963938256567264 * util::RAD2DEG)
         .withPitch(1.0471975511965976 * util::RAD2DEG));
 
-    EXPECT_EQ((std::vector<UnwrappedTileID>{
-        { 2, 3, 1 }, { 2, 2, 1 }, { 2, 3, 0 }, { 2, 2, 0 }, { 1, { 2, 0, 0 } }, { 1, { 2, 1, 0 } }
+    EXPECT_EQ((std::vector<OverscaledTileID>{
+       { 2, 3, 1 }, { 2, 2, 1 }, { 2, 3, 0 }, { 2, 2, 0 }, { 2, 1, { 2, 0, 0 } }, { 2, 1, { 2, 1, 0 } }
     }),
-              util::tileCover(transform.getState(), 2));
+             util::tileCover(transform.getState(), 2));
 }
 
 TEST(TileCover, PitchOverAllowedByContentInsets) {
@@ -66,7 +66,7 @@ TEST(TileCover, PitchOverAllowedByContentInsets) {
     // Top padding of 376 leads to capped pitch. See Transform::getMaxPitchForEdgeInsets.
     EXPECT_LE(transform.getPitch() + 0.001, util::DEG2RAD * 60);
 
-    EXPECT_EQ((std::vector<UnwrappedTileID>{
+    EXPECT_EQ((std::vector<OverscaledTileID>{
         { 3, 4, 3 }, { 3, 3, 3 }, { 3, 4, 4 }, { 3, 3, 4 }, { 3, 4, 2 }, { 3, 5, 3 }, { 3, 5, 2 }
     }),
               util::tileCover(transform.getState(), 3));
@@ -84,29 +84,77 @@ TEST(TileCover, PitchWithLargerResultSet) {
     auto cover = util::tileCover(transform.getState(), 5);
     // Returned vector has above 100 elements, we check first 16 as there is a
     // plan to return lower LOD for distant tiles.
-    EXPECT_EQ((std::vector<UnwrappedTileID> {
+    EXPECT_EQ((std::vector<OverscaledTileID> {
         { 5, 15, 16 }, { 5, 15, 17 }, { 5, 14, 16 }, { 5, 14, 17 },
         { 5, 16, 16 }, { 5, 16, 17 }, { 5, 15, 15 }, { 5, 14, 15 },
         { 5, 15, 18 }, { 5, 14, 18 }, { 5, 16, 15 }, { 5, 13, 16 },
         { 5, 13, 17 }, { 5, 16, 18 }, { 5, 13, 18 }, { 5, 15, 19 }
-    }), (std::vector<UnwrappedTileID> { cover.begin(), cover.begin() + 16}) );
+    }), (std::vector<OverscaledTileID> { cover.begin(), cover.begin() + 16}) );
 }
 
 TEST(TileCover, WorldZ1) {
-    EXPECT_EQ((std::vector<UnwrappedTileID>{
+    EXPECT_EQ((std::vector<OverscaledTileID>{
         { 1, 0, 0 }, { 1, 0, 1 }, { 1, 1, 0 }, { 1, 1, 1 },
     }),
               util::tileCover(LatLngBounds::world(), 1));
 }
 
 TEST(TileCover, SingletonZ0) {
-    EXPECT_EQ((std::vector<UnwrappedTileID>{}),
+    EXPECT_EQ((std::vector<OverscaledTileID>{}),
               util::tileCover(LatLngBounds::singleton({ 0, 0 }), 0));
 }
 
 TEST(TileCover, SingletonZ1) {
-    EXPECT_EQ((std::vector<UnwrappedTileID>{}),
+    EXPECT_EQ((std::vector<OverscaledTileID>{}),
               util::tileCover(LatLngBounds::singleton({ 0, 0 }), 1));
+}
+
+TEST(TileCover, CoordinatesAreUnwrapped) {
+    Transform transform;
+    transform.resize({ 512, 512 });
+    transform.jumpTo(CameraOptions().withCenter(LatLng { 0.1, -180.1, }).withZoom(1.0));
+
+    EXPECT_EQ((std::vector<OverscaledTileID>{
+        { 1, 0, { 1, 1, 0 } }, { 1, 1, { 1, 0, 0 } }, { 1, 0, { 1, 1, 1 } }, { 1, 1, { 1, 0, 1 } }
+    }),
+              util::tileCover(transform.getState(), 1));
+}
+
+TEST(TileCover, DifferentOverscaledZ) {
+    Transform transform;
+    transform.resize({ 512, 512 });
+    // slightly offset center so that tile order is better defined
+
+    transform.jumpTo(CameraOptions().withCenter(LatLng { 0.1, -0.1, }).withZoom(2.0));
+
+    EXPECT_EQ((std::vector<OverscaledTileID>{
+        { 3, 0, { 2, 1, 1 } }, { 3, 0, { 2, 2, 1 } }, { 3, 0, { 2, 1, 2 } }, { 3, 0, { 2, 2, 2 } }
+    }),
+              util::tileCover(transform.getState(), 2, 3));
+}
+
+TEST(TileCover, DifferentOverscaledZWithPitch) {
+    Transform transform;
+    transform.resize({ 512, 512 });
+    transform.jumpTo(CameraOptions().withCenter(LatLng { 30.0, -10.0, }).withZoom(3.5).withPitch(60));
+
+    EXPECT_EQ((std::vector<OverscaledTileID>{
+        { 5, 0, { 3, 3, 3 } }, { 5, 0, { 3, 4, 3 } }, { 5, 0, { 3, 3, 2 } },
+        { 5, 0, { 3, 4, 2 } }, { 5, 0, { 3, 3, 1 } }, { 5, 0, { 3, 4, 1 } }, { 5, 0, { 3, 2, 1 } }
+    }),
+              util::tileCover(transform.getState(), 3, 5));
+}
+
+TEST(TileCover, DifferentOverscaledZWrapped) {
+    Transform transform;
+    transform.resize({ 512, 512 });
+    transform.jumpTo(CameraOptions().withCenter(LatLng { 0.1, -180.1, }).withZoom(1.0));
+
+    // -180.1 should wrap around to 179.9
+    EXPECT_EQ((std::vector<OverscaledTileID>{
+        { 2, 0, { 1, 1, 0 } }, { 2, 1, { 1, 0, 0 } }, { 2, 0, { 1, 1, 1 } }, { 2, 1, { 1, 0, 1 } }
+    }),
+              util::tileCover(transform.getState(), 1, 2));
 }
 
 TEST(TileCoverStream, Arctic) {
@@ -137,14 +185,14 @@ static const LatLngBounds sanFrancisco =
     LatLngBounds::hull({ 37.6609, -122.5744 }, { 37.8271, -122.3204 });
 
 TEST(TileCover, SanFranciscoZ0) {
-    EXPECT_EQ((std::vector<UnwrappedTileID>{
+    EXPECT_EQ((std::vector<OverscaledTileID>{
         { 0, 0, 0 },
     }),
               util::tileCover(sanFrancisco, 0));
 }
 
 TEST(TileCover, SanFranciscoZ10) {
-    EXPECT_EQ((std::vector<UnwrappedTileID>{
+    EXPECT_EQ((std::vector<OverscaledTileID>{
         { 10, 163, 395 }, { 10, 163, 396 }, { 10, 164, 395 }, { 10, 164, 396 },
     }),
               util::tileCover(sanFrancisco, 10));
@@ -154,7 +202,7 @@ static const LatLngBounds sanFranciscoWrapped =
     LatLngBounds::hull({ 37.6609, 238.5744 }, { 37.8271, 238.3204 });
 
 TEST(TileCover, SanFranciscoZ0Wrapped) {
-    EXPECT_EQ((std::vector<UnwrappedTileID>{ { 0, 1, 0 } }),
+    EXPECT_EQ((std::vector<OverscaledTileID>{ { 0, 1, { 0, 0, 0 } } }),
               util::tileCover(sanFranciscoWrapped, 0));
 }
 

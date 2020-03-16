@@ -79,12 +79,14 @@ namespace util {
 
 namespace {
 
-std::vector<UnwrappedTileID> tileCover(const Point<double>& tl,
+std::vector<OverscaledTileID> tileCover(const Point<double>& tl,
                                        const Point<double>& tr,
                                        const Point<double>& br,
                                        const Point<double>& bl,
                                        const Point<double>& c,
-                                       uint8_t z) {
+                                       uint8_t z,
+                                       uint8_t tileZoom) {
+    assert(tileZoom >= z);
     const int32_t tiles = 1 << z;
 
     struct ID {
@@ -121,9 +123,10 @@ std::vector<UnwrappedTileID> tileCover(const Point<double>& tl,
                 return a.x == b.x && a.y == b.y;
             }), t.end());
 
-    std::vector<UnwrappedTileID> result;
+    std::vector<OverscaledTileID> result;
     for (const auto& id : t) {
-        result.emplace_back(z, id.x, id.y);
+        UnwrappedTileID unwrappedId(z, id.x, id.y);
+        result.emplace_back(tileZoom, unwrappedId.wrap, unwrappedId.canonical);
     }
     return result;
 }
@@ -139,7 +142,7 @@ int32_t coveringZoomLevel(double zoom, style::SourceType type, uint16_t size) {
     }
 }
 
-std::vector<UnwrappedTileID> tileCover(const LatLngBounds& bounds_, uint8_t z) {
+std::vector<OverscaledTileID> tileCover(const LatLngBounds& bounds_, uint8_t z, optional<uint8_t> tileZoom) {
     if (bounds_.isEmpty() ||
         bounds_.south() >  util::LATITUDE_MAX ||
         bounds_.north() < -util::LATITUDE_MAX) {
@@ -156,10 +159,10 @@ std::vector<UnwrappedTileID> tileCover(const LatLngBounds& bounds_, uint8_t z) {
         Projection::project(bounds.southeast(), z),
         Projection::project(bounds.southwest(), z),
         Projection::project(bounds.center(), z),
-        z);
+        z, tileZoom.value_or(z));
 }
 
-std::vector<UnwrappedTileID> tileCover(const TransformState& state, uint8_t z) {
+std::vector<OverscaledTileID> tileCover(const TransformState& state, uint8_t z, optional<uint8_t> tileZoom) {
     assert(state.valid());
 
     const double w = state.getSize().width;
@@ -170,7 +173,7 @@ std::vector<UnwrappedTileID> tileCover(const TransformState& state, uint8_t z) {
         TileCoordinate::fromScreenCoordinate(state, z, { w,   h   }).p,
         TileCoordinate::fromScreenCoordinate(state, z, { 0,   h   }).p,
         TileCoordinate::fromScreenCoordinate(state, z, { w/2, h/2 }).p,
-        z);
+        z, tileZoom.value_or(z));
 }
 
 // std::vector<UnwrappedTileID> tileCover(const Geometry<double>& geometry, uint8_t z) {

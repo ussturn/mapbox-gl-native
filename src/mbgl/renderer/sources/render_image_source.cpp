@@ -170,7 +170,7 @@ void RenderImageSource::update(Immutable<style::Source::Impl> baseImpl_,
     imageBounds.extend(coords[3]);
     auto tileCover = util::tileCover(imageBounds, zoom);
     tileIds.clear();
-    tileIds.push_back(tileCover[0]);
+    tileIds.push_back(tileCover[0].toUnwrapped());
 
     bool hasVisibleTile = false;
     // Add additional wrapped tile ids if neccessary

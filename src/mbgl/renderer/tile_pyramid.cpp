@@ -90,8 +90,8 @@ void TilePyramid::update(const std::vector<Immutable<style::LayerProperties>>& l
     int32_t tileZoom = overscaledZoom;
     int32_t panZoom = zoomRange.max;
 
-    std::vector<UnwrappedTileID> idealTiles;
-    std::vector<UnwrappedTileID> panTiles;
+    std::vector<OverscaledTileID> idealTiles;
+    std::vector<OverscaledTileID> panTiles;
 
     if (overscaledZoom >= zoomRange.min) {
         int32_t idealZoom = std::min<int32_t>(zoomRange.max, overscaledZoom);
@@ -113,11 +113,11 @@ void TilePyramid::update(const std::vector<Immutable<style::LayerProperties>>& l
             }
 
             if (panZoom < idealZoom) {
-                panTiles = util::tileCover(parameters.transformState, panZoom);
+                panTiles = util::tileCover(parameters.transformState, panZoom, panZoom);
             }
         }
 
-        idealTiles = util::tileCover(parameters.transformState, idealZoom);
+        idealTiles = util::tileCover(parameters.transformState, idealZoom, tileZoom);
     }
 
     // Stores a list of all the tiles that we're definitely going to retain. There are two
@@ -177,11 +177,11 @@ void TilePyramid::update(const std::vector<Immutable<style::LayerProperties>>& l
 
     if (!panTiles.empty()) {
         algorithm::updateRenderables(getTileFn, createTileFn, retainTileFn,
-                [](const UnwrappedTileID&, Tile&) {}, panTiles, zoomRange, panZoom);
+                [](const UnwrappedTileID&, Tile&) {}, panTiles, zoomRange);
     }
 
     algorithm::updateRenderables(getTileFn, createTileFn, retainTileFn, renderTileFn,
-                                 idealTiles, zoomRange, tileZoom);
+                                 idealTiles, zoomRange);
     
     for (auto previouslyRenderedTile : previouslyRenderedTiles) {
         Tile& tile = previouslyRenderedTile.second;
