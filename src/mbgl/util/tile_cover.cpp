@@ -5,6 +5,7 @@
 #include <mbgl/util/tile_cover_impl.hpp>
 #include <mbgl/util/tile_coordinate.hpp>
 #include <mbgl/math/log2.hpp>
+#include <mbgl/util/mat3.hpp>
 
 #include <functional>
 #include <list>
@@ -140,6 +141,200 @@ int32_t coveringZoomLevel(double zoom, style::SourceType type, uint16_t size) {
     } else {
         return std::floor(zoom);
     }
+}
+
+static vec3 toVec3(const vec4& v)
+{
+    return vec3{ v[0], v[1], v[2] };
+}
+
+static vec3 vec3Add(const vec3& a, const vec3& b)
+{
+    return vec3{ a[0] + b[0], a[1] + b[1], a[2] + b[2] };
+}
+
+static vec3 vec3Sub(const vec3& a, const vec3& b)
+{
+    return vec3{ a[0] - b[0], a[1] - b[1], a[2] - b[2] };
+}
+
+static vec3 vec3Scale(const vec3& a, double s)
+{
+    return vec3{ a[0] * s, a[1] * s, a[2] * s };
+}
+
+static vec3 vec3Cross(const vec3& a, const vec3& b)
+{
+    return vec3
+    {
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0]
+    };
+}
+
+static double vec3Dot(const vec3& a, const vec3& b)
+{
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+static double vec3LengthSq(const vec3& a)
+{
+    return vec3Dot(a, a);
+}
+
+static double vec3Length(const vec3& a)
+{
+    return std::sqrt(vec3LengthSq(a));
+}
+
+static vec3 vec3Normalize(const vec3& a)
+{
+    return vec3Scale(a, 1.0 / vec3Length(a));
+}
+
+struct AABB
+{
+    AABB(vec3 min_, vec3 max_)
+        : min(min_)
+        , max(max_)
+        , center(vec3Scale(vec3Add(min_, max_), 0.5f))
+    { }
+
+
+    vec3 min;
+    vec3 max;
+    vec3 center;
+};
+
+class Frustum
+{
+public:
+    using PlaneArray = std::array<vec4, 6>;
+    using PointArray = std::array<vec4, 8>;
+
+    Frustum(const PointArray& points_, const PlaneArray& planes_)
+        : points(points_)
+        , planes(planes_)
+    { }
+
+    static Frustum fromInvProjMatrix(const mat4& invProj, double worldSize, double zoom)
+    {
+        // Define frustum corner points in normalized clip space
+        PointArray frustumCoords = 
+        {
+            vec4 { -1.0, 1.0, -1.0, 1.0 },
+            vec4 { 1.0, 1.0, -1.0, 1.0 },
+            vec4 { 1.0, -1.0, -1.0, 1.0 },
+            vec4 { -1.0, -1.0, -1.0, 1.0 },
+            vec4 { -1.0, 1.0, 1.0, 1.0 },
+            vec4 { 1.0, 1.0, 1.0, 1.0 },
+            vec4 { 1.0, -1.0, 1.0, 1.0 },
+            vec4 { -1.0, -1.0, 1.0, 1.0 }
+        };
+
+        const double scale = std::pow(2.0, zoom);
+
+        // Transform points to tile space
+        for (auto& coord : frustumCoords)
+        {
+            matrix::transformMat4(coord, coord, invProj);
+
+            for (auto& component : coord)
+                component *= 1.0 / coord[3] / worldSize * scale;
+        }
+
+        const std::array<vec3i, 6> frustumPlanePointIndices =
+        {
+            vec3i { 0, 1, 2 },  // near
+            vec3i { 6, 5, 4 },  // far
+            vec3i { 0, 3, 7 },  // left
+            vec3i { 2, 1, 5 },  // right
+            vec3i { 3, 2, 6 },  // bottom
+            vec3i { 0, 4, 5 }   // top
+        };
+
+        PlaneArray frustumPlanes;
+
+        for (int i = 0; i < (int)frustumPlanePointIndices.size(); i++)
+        {
+            const vec3i indices = frustumPlanePointIndices[i];
+
+            // Compute plane equation using 3 points on the plane
+            const vec3 p0 = toVec3(frustumCoords[indices[0]]);
+            const vec3 p1 = toVec3(frustumCoords[indices[1]]);
+            const vec3 p2 = toVec3(frustumCoords[indices[2]]);
+
+            const vec3 a = vec3Sub(p0, p1);
+            const vec3 b = vec3Sub(p2, p1);
+            const vec3 n = vec3Normalize(vec3Cross(a, b));
+
+            frustumPlanes[i] = { n[0], n[1], n[2], -vec3Dot(n, p1) };
+        }
+
+        return Frustum(std::move(frustumCoords), std::move(frustumPlanes));
+    }
+
+private:
+    PointArray points;
+    PlaneArray planes;
+};
+
+std::vector<OverscaledTileID> tileCoverLod(const TransformState& state, uint8_t z, optional<uint8_t> tileZoom) {
+
+    struct Node
+    {
+        AABB aabb;
+        uint8_t zoom;
+        double x, y;
+        int wrap;
+        bool fullyVisible;
+    };
+
+    // Get center point of the map in normalized world coordinates
+    vec3 centerPoint =
+    { 
+        state.getX() / util::tileSize,
+        state.getY() / util::tileSize,
+        0.0
+    };
+
+    const double numTiles = std::pow(2.0, z);
+    const double worldSize = Projection::worldSize(state.getScale());
+    const double minZoom = 0;
+    const double maxZoom = z;
+
+    // There should always be a certain number of maximum zoom level tiles surrounding the center location
+    const double radiusOfMaxLvlLodInTiles = 3;
+
+    const auto newRootTile = [&](int wrap) -> Node {
+        return 
+        {
+            AABB({ wrap * numTiles, 0.0, 0.0 }, { (wrap + 1) * numTiles, numTiles, 0.0 }),
+            z,
+            0.0,
+            0.0,
+            wrap,
+            false
+        };
+    };
+
+    // Perform depth-first traversal on tile tree to find visible tiles
+    std::vector<Node> stack;
+    std::vector<OverscaledTileID> result;
+
+    (void)centerPoint;
+    (void)state;
+    (void)worldSize;
+    (void)minZoom;
+    (void)maxZoom;
+    (void)radiusOfMaxLvlLodInTiles;
+    (void)newRootTile;
+    (void)tileZoom;
+
+    //state.getProjectionMatrix
+
+    return { };
 }
 
 std::vector<OverscaledTileID> tileCover(const LatLngBounds& bounds_, uint8_t z, optional<uint8_t> tileZoom) {
