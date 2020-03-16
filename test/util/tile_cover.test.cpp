@@ -150,11 +150,46 @@ TEST(TileCover, DifferentOverscaledZWrapped) {
     transform.resize({ 512, 512 });
     transform.jumpTo(CameraOptions().withCenter(LatLng { 0.1, -180.1, }).withZoom(1.0));
 
-    // -180.1 should wrap around to 179.9
     EXPECT_EQ((std::vector<OverscaledTileID>{
         { 2, 0, { 1, 1, 0 } }, { 2, 1, { 1, 0, 0 } }, { 2, 0, { 1, 1, 1 } }, { 2, 1, { 1, 0, 1 } }
     }),
               util::tileCover(transform.getState(), 1, 2));
+}
+
+TEST(TileCover, FlippedY) {
+    Transform transform;
+    transform.resize({ 512, 512 });
+    transform.setViewportMode(ViewportMode::FlippedY);
+    transform.jumpTo(CameraOptions().withCenter(LatLng { 0.2, -0.1, }).withZoom(1.0));
+
+    EXPECT_EQ((std::vector<OverscaledTileID>{
+        { 1, 0, 0 }, { 1, 1, 0 }, { 1, 0, 1 }, { 1, 1, 1 }
+    }),
+              util::tileCover(transform.getState(), 1));
+}
+
+TEST(TileCover, FlippedYPitch) {
+    Transform transform;
+    transform.resize({ 512, 512 });
+    transform.setViewportMode(ViewportMode::FlippedY);
+    transform.jumpTo(CameraOptions().withCenter(LatLng { 0.1, -0.1, }).withZoom(2.0).withBearing(5.0).withPitch(40.0));
+
+    EXPECT_EQ((std::vector<OverscaledTileID>{
+        { 2, 1, 1 }, { 2, 2, 1 }, { 2, 1, 2 }, { 2, 2, 2 }
+    }),
+              util::tileCover(transform.getState(), 2));
+}
+
+TEST(TileCover, FlippedYHelsinki) {
+    Transform transform;
+    transform.resize({ 512, 512 });
+    transform.setViewportMode(ViewportMode::FlippedY);
+    transform.jumpTo(CameraOptions().withCenter(LatLng { 60.167231, 24.942063, }).withZoom(11.447425));
+
+    EXPECT_EQ((std::vector<OverscaledTileID>{
+        { 11, 1165, 592 }, { 11, 1166, 592 }, { 11, 1165, 593 }, { 11, 1166, 593 }
+    }),
+              util::tileCover(transform.getState(), 11));
 }
 
 TEST(TileCoverStream, Arctic) {

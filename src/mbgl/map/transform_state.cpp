@@ -160,6 +160,9 @@ void TransformState::getProjMatrix(mat4& projMatrix, uint16_t nearZ, bool aligne
         const float dya = -std::modf(dy, &devNull) + bearingCos * yShift + bearingSin * xShift;
         matrix::translate(projMatrix, projMatrix, dxa > 0.5 ? dxa - 1 : dxa, dya > 0.5 ? dya - 1 : dya, 0);
     }
+
+    // Compute inverted projection matrix
+    matrix::invert(invProjectionMatrix, projectionMatrix);
 }
 
 void TransformState::updateMatricesIfNeeded() const {
@@ -177,6 +180,11 @@ void TransformState::updateMatricesIfNeeded() const {
 const mat4& TransformState::getProjectionMatrix() const {
     updateMatricesIfNeeded();
     return projectionMatrix;
+}
+
+const mat4& TransformState::getInvProjectionMatrix() const {
+    updateMatricesIfNeeded();
+    return invProjectionMatrix;
 }
 
 const mat4& TransformState::getCoordMatrix() const {
