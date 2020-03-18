@@ -8,6 +8,8 @@
 
   The new `keepRenderData` map options flag is added to control whether render data shall be kept between `renderStill()` calls.
 
+- [android] Add jni binding for styleable snapshotter ([#16286](https://github.com/mapbox/mapbox-gl-native/pull/16286))
+
 ### 🐞 Bug fixes
 
 - [tile mode][static mode] Clear render data for the new still image request ([#16318](https://github.com/mapbox/mapbox-gl-native/pull/16318))
