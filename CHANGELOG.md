@@ -14,6 +14,10 @@
 
   If the `keepRenderData` map options flag is unset all render data is cleared between `renderStill()` calls, thus stale tiles from the previous `renderStill()` call are never shown.
 
+- [core] Use `TileCoordinates` instead of `LngLat` for `within` expression calculation ([#16319](https://github.com/mapbox/mapbox-gl-native/pull/16319))
+  
+  Fix the issue that `within` expression evaluates point features inconsistently across zoom levels if the point lies near the boundary of a GeoJSON object ([#16301](https://github.com/mapbox/mapbox-gl-native/issues/16301))
+
 ### 🏁 Performance improvements
 
 - [tile mode][static mode] Clear render data for the new still image request ([#16318](https://github.com/mapbox/mapbox-gl-native/pull/16318))
