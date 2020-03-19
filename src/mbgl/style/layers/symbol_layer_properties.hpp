@@ -128,7 +128,7 @@ struct TextField : DataDrivenLayoutProperty<expression::Formatted> {
 
 struct TextFont : DataDrivenLayoutProperty<std::vector<std::string>> {
     static constexpr const char *name() { return "text-font"; }
-    static std::vector<std::string> defaultValue() { return {{"Open Sans Regular"}, {"Arial Unicode MS Regular"}}; }
+    static std::vector<std::string> defaultValue() { return {{util::LAST_RESORT_ALPHABETIC_FONT}, {util::LAST_RESORT_PAN_UNICODE_FONT}}; }
 };
 
 struct TextIgnorePlacement : LayoutProperty<bool> {

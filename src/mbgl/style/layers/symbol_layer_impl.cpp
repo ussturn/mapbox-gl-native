@@ -28,7 +28,7 @@ void SymbolLayer::Impl::populateFontStack(std::set<FontStack>& fontStack) const 
 
     layout.get<TextFont>().match(
         [&fontStack] (Undefined) {
-            fontStack.insert({"Open Sans Regular", "Arial Unicode MS Regular"});
+            fontStack.insert({util::LAST_RESORT_ALPHABETIC_FONT, util::LAST_RESORT_PAN_UNICODE_FONT});
         },
         [&fontStack] (const FontStack& constant) {
             fontStack.insert(constant);
