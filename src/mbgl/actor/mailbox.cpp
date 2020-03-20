@@ -91,14 +91,14 @@ void Mailbox::receive() {
 }
 
 // static
-void Mailbox::maybeReceive(std::weak_ptr<Mailbox> mailbox) {
+void Mailbox::maybeReceive(const std::weak_ptr<Mailbox>& mailbox) {
     if (auto locked = mailbox.lock()) {
         locked->receive();
     }
 }
 
 // static
-std::function<void()> Mailbox::makeClosure(std::weak_ptr<Mailbox> mailbox) {
+std::function<void()> Mailbox::makeClosure(const std::weak_ptr<Mailbox>& mailbox) {
     return [mailbox]() { maybeReceive(mailbox); };
 }
 
