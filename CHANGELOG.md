@@ -10,6 +10,7 @@
 
 - [android] Add jni binding for styleable snapshotter ([#16286](https://github.com/mapbox/mapbox-gl-native/pull/16286))
 
+
 ## maps-v1.4.1
 
 ### 🐞 Bug fixes
