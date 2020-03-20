@@ -29,6 +29,18 @@ Point<int64_t> latLonToTileCoodinates(const Point<double>& point, const mbgl::Ca
     return p;
 };
 
+
+Point<double> tileCoordinatesToLatLng (const Point<int16_t>& p, const mbgl::CanonicalTileID& canonical) {
+    const double size = util::EXTENT * std::pow(2, canonical.z);
+    const double x0 = util::EXTENT * static_cast<double>(canonical.x);
+    const double y0 = util::EXTENT * static_cast<double>(canonical.y);
+    double y2 = 180 - (p.y + y0) * 360 / size;
+    return Point<double>(
+        (p.x + x0) * 360 / size - 180,
+        360.0 / M_PI * std::atan(std::exp(y2 * M_PI / 180)) - 90.0
+    );
+};
+
 Polygon<int64_t> getTilePolygon(const Polygon<double>& polygon,
                                 const mbgl::CanonicalTileID& canonical,
                                 WithinBBox& bbox) {
@@ -67,18 +79,38 @@ MultiPolygon<int64_t> getTilePolygons(const Feature::geometry_type& polygonGeoSe
         [](const auto&) { return MultiPolygon<int64_t>(); });
 }
 
+
+void updatePoint(Point<int64_t>& p, WithinBBox& bbox, const WithinBBox& polyBBox, const int64_t worldSize) {
+    if (p.x <= polyBBox[0] || p.x >= polyBBox[2]) {
+        auto shift0 = (p.x - polyBBox[0] > worldSize/2) ? -worldSize : (polyBBox[0] - p.x > worldSize/2) ? worldSize : 0;
+        auto shift1 = (p.x - polyBBox[2] > worldSize/2) ? -worldSize : (polyBBox[2] - p.x > worldSize/2) ? worldSize : 0;
+        
+         if (shift0 != 0 ){
+             p.x += shift0;
+         } else if(shift0 != 0 ){
+             p.x += shift1;
+         }
+    }
+
+    updateBBox(bbox, p);
+  
+}
+
 MultiPoint<int64_t> getTilePoints(const GeometryCoordinates& points,
                                   const mbgl::CanonicalTileID& canonical,
-                                  WithinBBox& bbox) {
+                                  WithinBBox& bbox,
+                                  const WithinBBox& polyBBox) {
     const int64_t xShift = util::EXTENT * canonical.x;
     const int64_t yShift = util::EXTENT * canonical.y;
+    const auto worldSize =  util::EXTENT * std::pow(2, canonical.z);
     MultiPoint<int64_t> results;
     results.reserve(points.size());
     for (const auto& p : points) {
-        const auto point = Point<int64_t>(p.x + xShift, p.y + yShift);
-        updateBBox(bbox, point);
+        auto point = Point<int64_t>(p.x + xShift, p.y + yShift);
+        updatePoint(point, bbox, polyBBox, worldSize);
         results.push_back(point);
     }
+
     return results;
 }
 
@@ -93,6 +125,8 @@ MultiLineString<int64_t> getTileLines(const GeometryCollection& lines,
         LineString<int64_t> lineString;
         lineString.reserve(line.size());
         for (const auto& p : line) {
+            const auto lnglat = tileCoordinatesToLatLng(p, canonical);
+            (void) lnglat;
             auto point = Point<int64_t>(p.x + xShift, p.y + yShift);
             updateBBox(bbox, point);
             lineString.push_back(point);
@@ -113,7 +147,7 @@ bool featureWithinPolygons(const GeometryTileFeature& feature,
         case FeatureType::Point: {
             assert(!geometries.empty());
             WithinBBox pointBBox = DefaultBBox;
-            MultiPoint<int64_t> points = getTilePoints(geometries.at(0), canonical, pointBBox);
+            MultiPoint<int64_t> points = getTilePoints(geometries.at(0), canonical, pointBBox, polyBBox);
             if (!boxWithinBox(pointBBox, polyBBox)) return false;
 
             return std::all_of(
@@ -121,12 +155,26 @@ bool featureWithinPolygons(const GeometryTileFeature& feature,
         }
         case FeatureType::LineString: {
             WithinBBox lineBBox = DefaultBBox;
+            
             MultiLineString<int64_t> multiLineString = getTileLines(geometries, canonical, lineBBox);
+            const auto worldSize =  util::EXTENT * std::pow(2, canonical.z);
+            if (lineBBox[2] - lineBBox[0] <= worldSize / 2) {
+                lineBBox = DefaultBBox;
+                for (auto& line: multiLineString) {
+                    for (auto&p : line) {
+                        updatePoint(p, lineBBox, polyBBox, worldSize);
+                    }
+                }
+            }
+
             if (!boxWithinBox(lineBBox, polyBBox)) return false;
 
-            return std::all_of(multiLineString.begin(), multiLineString.end(), [&polygons](const auto& line) {
+            auto ret = std::all_of(multiLineString.begin(), multiLineString.end(), [&polygons](const auto& line) {
                 return lineStringWithinPolygons(line, polygons);
-            });
+                
+            }  );
+            return ret;
+         
         }
         default:
             return false;

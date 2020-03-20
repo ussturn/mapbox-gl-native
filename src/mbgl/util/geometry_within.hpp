@@ -18,6 +18,8 @@ bool boxWithinBox(const WithinBBox& bbox1, const WithinBBox& bbox2);
 
 void updateBBox(WithinBBox& bbox, const Point<int64_t>& p);
 
+
+
 bool pointWithinPolygon(const Point<int64_t>& point, const Polygon<int64_t>& polygon);
 
 bool pointWithinPolygons(const Point<int64_t>& point, const MultiPolygon<int64_t>& polygons);
