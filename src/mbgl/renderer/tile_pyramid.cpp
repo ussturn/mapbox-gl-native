@@ -117,8 +117,8 @@ void TilePyramid::update(const std::vector<Immutable<style::LayerProperties>>& l
             }
         }
 
-        //idealTiles = util::tileCover(parameters.transformState, idealZoom, tileZoom);
-        idealTiles = util::tileCoverLod(parameters.transformState, idealZoom, tileZoom);
+        idealTiles = util::tileCover(parameters.transformState, idealZoom, tileZoom);
+        //idealTiles = util::tileCoverLod(parameters.transformState, idealZoom, tileZoom);
     }
 
     // Stores a list of all the tiles that we're definitely going to retain. There are two
