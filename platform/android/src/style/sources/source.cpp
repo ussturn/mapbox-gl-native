@@ -109,6 +109,23 @@ namespace android {
         return jni::Local<jni::Integer>(env, nullptr);
     }
 
+    void Source::setMaxOverscaleFactor(jni::JNIEnv& env, jni::Integer& maxOverscaleFactor) {
+        if (!maxOverscaleFactor) {
+            source.setMaxOverscaleFactor(nullopt);
+        } else {
+            source.setMaxOverscaleFactor(jni::Unbox(env, maxOverscaleFactor));
+        }
+    }
+
+    jni::Local<jni::Integer> Source::getMaxOverscaleFactor(jni::JNIEnv& env) {
+        auto maxOverscaleFactor = source.getMaxOverscaleFactor();
+        if (maxOverscaleFactor) {
+            return jni::Box(env, jni::jint(*maxOverscaleFactor));
+        }
+        return jni::Local<jni::Integer>(env, nullptr);
+    }
+
+
     void Source::addToMap(JNIEnv& env, const jni::Object<Source>& obj, mbgl::Map& map, AndroidRendererFrontend& frontend) {
         // Check to see if we own the source first
         if (!ownedSource) {
@@ -171,7 +188,9 @@ namespace android {
                                         METHOD(&Source::getId, "nativeGetId"),
                                         METHOD(&Source::getAttribution, "nativeGetAttribution"),
                                         METHOD(&Source::setPrefetchZoomDelta, "nativeSetPrefetchZoomDelta"),
-                                        METHOD(&Source::getPrefetchZoomDelta, "nativeGetPrefetchZoomDelta"));
+                                        METHOD(&Source::getPrefetchZoomDelta, "nativeGetPrefetchZoomDelta"),
+                                        METHOD(&Source::setMaxOverscaleFactor, "nativeSetMaxOverscaleFactor"),
+                                        METHOD(&Source::getMaxOverscaleFactor, "nativeGetMaxOverscaleFactor"));
 
         // Register subclasses
         GeoJSONSource::registerNative(env);

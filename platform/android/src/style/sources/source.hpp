@@ -47,6 +47,10 @@ public:
 
     jni::Local<jni::Integer> getPrefetchZoomDelta(jni::JNIEnv&);
 
+    void setMaxOverscaleFactor(jni::JNIEnv& env, jni::Integer& delta);
+
+    jni::Local<jni::Integer> getMaxOverscaleFactor(jni::JNIEnv&);
+
 protected:
     // Set on newly created sources until added to the map.
     std::unique_ptr<mbgl::style::Source> ownedSource;
