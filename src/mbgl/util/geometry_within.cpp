@@ -70,12 +70,10 @@ bool lineIntersectPolygon(const Point<int64_t>& p1, const Point<int64_t>& p2, co
             if (lineIntersectLine(p1, p2, ring[i], ring[i + 1])) {
                 return true;
             }
-
         }
     }
     return false;
 }
-
 
 } // namespace
 

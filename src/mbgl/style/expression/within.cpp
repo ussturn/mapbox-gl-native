@@ -29,16 +29,12 @@ Point<int64_t> latLonToTileCoodinates(const Point<double>& point, const mbgl::Ca
     return p;
 };
 
-
-Point<double> tileCoordinatesToLatLng (const Point<int16_t>& p, const mbgl::CanonicalTileID& canonical) {
+Point<double> tileCoordinatesToLatLng(const Point<int16_t>& p, const mbgl::CanonicalTileID& canonical) {
     const double size = util::EXTENT * std::pow(2, canonical.z);
     const double x0 = util::EXTENT * static_cast<double>(canonical.x);
     const double y0 = util::EXTENT * static_cast<double>(canonical.y);
     double y2 = 180 - (p.y + y0) * 360 / size;
-    return Point<double>(
-        (p.x + x0) * 360 / size - 180,
-        360.0 / M_PI * std::atan(std::exp(y2 * M_PI / 180)) - 90.0
-    );
+    return Point<double>((p.x + x0) * 360 / size - 180, 360.0 / M_PI * std::atan(std::exp(y2 * M_PI / 180)) - 90.0);
 };
 
 Polygon<int64_t> getTilePolygon(const Polygon<double>& polygon,
@@ -79,13 +75,13 @@ MultiPolygon<int64_t> getTilePolygons(const Feature::geometry_type& polygonGeoSe
         [](const auto&) { return MultiPolygon<int64_t>(); });
 }
 
-
 void updatePoint(Point<int64_t>& p, WithinBBox& bbox, const WithinBBox& polyBBox, const int64_t worldSize) {
     if (p.x <= polyBBox[0] || p.x >= polyBBox[2]) {
         int64_t shift = 0;
-        shift = (p.x - polyBBox[0] > worldSize/2) ? -worldSize : (polyBBox[0] - p.x > worldSize/2) ? worldSize : 0;
+        shift = (p.x - polyBBox[0] > worldSize / 2) ? -worldSize : (polyBBox[0] - p.x > worldSize / 2) ? worldSize : 0;
         if (shift == 0) {
-            shift = (p.x - polyBBox[2] > worldSize/2) ? -worldSize : (polyBBox[2] - p.x > worldSize/2) ? worldSize : 0;
+            shift =
+                (p.x - polyBBox[2] > worldSize / 2) ? -worldSize : (polyBBox[2] - p.x > worldSize / 2) ? worldSize : 0;
         }
         p.x += shift;
     }
@@ -99,7 +95,7 @@ MultiPoint<int64_t> getTilePoints(const GeometryCoordinates& points,
                                   const WithinBBox& polyBBox) {
     const int64_t xShift = util::EXTENT * canonical.x;
     const int64_t yShift = util::EXTENT * canonical.y;
-    const auto worldSize =  util::EXTENT * std::pow(2, canonical.z);
+    const auto worldSize = util::EXTENT * std::pow(2, canonical.z);
     MultiPoint<int64_t> results;
     results.reserve(points.size());
     for (const auto& p : points) {
@@ -123,7 +119,7 @@ MultiLineString<int64_t> getTileLines(const GeometryCollection& lines,
         lineString.reserve(line.size());
         for (const auto& p : line) {
             const auto lnglat = tileCoordinatesToLatLng(p, canonical);
-            (void) lnglat;
+            (void)lnglat;
             auto point = Point<int64_t>(p.x + xShift, p.y + yShift);
             updateBBox(bbox, point);
             lineString.push_back(point);
@@ -152,13 +148,13 @@ bool featureWithinPolygons(const GeometryTileFeature& feature,
         }
         case FeatureType::LineString: {
             WithinBBox lineBBox = DefaultBBox;
-            
+
             MultiLineString<int64_t> multiLineString = getTileLines(geometries, canonical, lineBBox);
-            const auto worldSize =  util::EXTENT * std::pow(2, canonical.z);
+            const auto worldSize = util::EXTENT * std::pow(2, canonical.z);
             if (lineBBox[2] - lineBBox[0] <= worldSize / 2) {
                 lineBBox = DefaultBBox;
-                for (auto& line: multiLineString) {
-                    for (auto&p : line) {
+                for (auto& line : multiLineString) {
+                    for (auto& p : line) {
                         updatePoint(p, lineBBox, polyBBox, worldSize);
                     }
                 }
@@ -168,10 +164,8 @@ bool featureWithinPolygons(const GeometryTileFeature& feature,
 
             auto ret = std::all_of(multiLineString.begin(), multiLineString.end(), [&polygons](const auto& line) {
                 return lineStringWithinPolygons(line, polygons);
-                
-            }  );
+            });
             return ret;
-         
         }
         default:
             return false;
