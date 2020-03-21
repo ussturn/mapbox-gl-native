@@ -58,7 +58,8 @@ void TilePyramid::update(const std::vector<Immutable<style::LayerProperties>>& l
                          const Range<uint8_t> zoomRange,
                          optional<LatLngBounds> bounds,
                          std::function<std::unique_ptr<Tile>(const OverscaledTileID&)> createTile,
-                         optional<uint8_t> sourcePrefetchZoomDelta) {
+                         optional<uint8_t> sourcePrefetchZoomDelta,
+                         optional<uint8_t> maxOverscaleFactor) {
     // If we need a relayout, abandon any cached tiles; they're now stale.
     if (needsRelayout) {
         cache.clear();
@@ -177,11 +178,11 @@ void TilePyramid::update(const std::vector<Immutable<style::LayerProperties>>& l
 
     if (!panTiles.empty()) {
         algorithm::updateRenderables(getTileFn, createTileFn, retainTileFn,
-                [](const UnwrappedTileID&, Tile&) {}, panTiles, zoomRange, panZoom);
+                [](const UnwrappedTileID&, Tile&) {}, panTiles, zoomRange, panZoom, maxOverscaleFactor);
     }
 
     algorithm::updateRenderables(getTileFn, createTileFn, retainTileFn, renderTileFn,
-                                 idealTiles, zoomRange, tileZoom);
+                                 idealTiles, zoomRange, tileZoom, maxOverscaleFactor);
     
     for (auto previouslyRenderedTile : previouslyRenderedTiles) {
         Tile& tile = previouslyRenderedTile.second;

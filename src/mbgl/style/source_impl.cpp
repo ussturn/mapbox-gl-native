@@ -16,5 +16,13 @@ optional<uint8_t> Source::Impl::getPrefetchZoomDelta() const noexcept {
     return prefetchZoomDelta;
 }
 
+void Source::Impl::setMaxOverscaleFactor(optional<uint8_t> maxOverscaleFactor_) noexcept {
+    maxOverscaleFactor = std::move(maxOverscaleFactor_);
+}
+
+optional<uint8_t> Source::Impl::getMaxOverscaleFactor() const noexcept {
+    return maxOverscaleFactor;
+}
+
 } // namespace style
 } // namespace mbgl

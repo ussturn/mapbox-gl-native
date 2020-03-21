@@ -115,7 +115,8 @@ void RenderGeoJSONSource::update(Immutable<style::Source::Impl> baseImpl_,
         [&, data_](const OverscaledTileID& tileID) {
             return std::make_unique<GeoJSONTile>(tileID, impl().id, parameters, data_);
         },
-        baseImpl->getPrefetchZoomDelta());
+        baseImpl->getPrefetchZoomDelta(),
+        baseImpl->getMaxOverscaleFactor());
 }
 
 mapbox::util::variant<Value, FeatureCollection>

@@ -75,6 +75,8 @@ public:
     virtual void loadDescription(FileSource&) = 0;
     void setPrefetchZoomDelta(optional<uint8_t> delta) noexcept;
     optional<uint8_t> getPrefetchZoomDelta() const noexcept;
+    void setMaxOverscaleFactor(optional<uint8_t> overscaleFactor) noexcept;
+    optional<uint8_t> getMaxOverscaleFactor() const noexcept;
     void dumpDebugLogs() const;
 
     virtual bool supportsLayerType(const mbgl::style::LayerTypeInfo*) const = 0;

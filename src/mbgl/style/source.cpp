@@ -43,6 +43,18 @@ optional<uint8_t> Source::getPrefetchZoomDelta() const noexcept {
     return baseImpl->getPrefetchZoomDelta();
 }
 
+void Source::setMaxOverscaleFactor(optional<uint8_t> overscaleFactor) noexcept {
+    if (getMaxOverscaleFactor() == overscaleFactor) return;
+    auto newImpl = createMutable();
+    newImpl->setMaxOverscaleFactor(std::move(overscaleFactor));
+    baseImpl = std::move(newImpl);
+    observer->onSourceChanged(*this);
+}
+
+optional<uint8_t> Source::getMaxOverscaleFactor() const noexcept {
+    return baseImpl->getMaxOverscaleFactor();
+}
+
 void Source::dumpDebugLogs() const {
     Log::Info(Event::General, "Source::id: %s", getID().c_str());
     Log::Info(Event::General, "Source::loaded: %d", loaded);

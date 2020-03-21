@@ -20,7 +20,8 @@ void updateRenderables(GetTileFn getTile,
                        RenderTileFn renderTile,
                        const IdealTileIDs& idealTileIDs,
                        const Range<uint8_t>& zoomRange,
-                       const uint8_t dataTileZoom) {
+                       const uint8_t dataTileZoom,
+                       optional<uint8_t> maxOverscaleFactor) {
     std::unordered_set<OverscaledTileID> checked;
     bool covered;
     int32_t overscaledZ;
@@ -84,6 +85,9 @@ void updateRenderables(GetTileFn getTile,
             if (!covered) {
                 // We couldn't find child tiles that entirely cover the ideal tile.
                 for (overscaledZ = dataTileZoom - 1; overscaledZ >= zoomRange.min; --overscaledZ) {
+                    if (maxOverscaleFactor && (dataTileZoom - overscaledZ) >= *maxOverscaleFactor) {
+                        break;
+                    }
                     const auto parentDataTileID = idealDataTileID.scaledTo(overscaledZ);
 
                     if (checked.find(parentDataTileID) != checked.end()) {
